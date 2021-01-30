@@ -8,6 +8,7 @@ using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
@@ -37,10 +38,38 @@ class Build : NukeBuild
     [GitVersion] readonly GitVersion GitVersion;
 
     Target Migrations => _ => _
-        .DependsOn(Compile)
+        .DependsOn(SqlServerContainerRun)
         .Executes(() =>
         {
+            System.Threading.Thread.Sleep(10000);
             DotNetRun(s => s.SetProjectFile($"{RootDirectory}/Migrations/Migrations.csproj"));
+        });
+
+    Target SqlServerContainerRun => _ => _
+        .Executes(() =>
+        {
+            DockerTasks.DockerRun(x => x
+                .SetImage("mcr.microsoft.com/mssql/server:2019-latest")
+                .SetEnv(new string[] { "ACCEPT_EULA=Y", "SA_PASSWORD=Password_01" })
+                .SetPublish("1401:1433")
+                .SetDetach(true)
+                .SetName("sql1")
+                .SetHostname("sql1"));
+            System.Threading.Thread.Sleep(10000);
+        });
+
+    Target SqlServerContainerStop => _ => _
+        .Executes(() =>
+        {
+            DockerTasks.Docker("stop sql1");
+            DockerTasks.Docker("container rm sql1");
+        });
+
+    Target IntegrationTests => _ => _
+        .DependsOn(Migrations)
+        .Executes(() =>
+        {
+
         });
 
     Target Clean => _ => _

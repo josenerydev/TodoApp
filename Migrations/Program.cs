@@ -12,7 +12,7 @@ namespace Migrations
         {
             var connectionString =
                 args.FirstOrDefault()
-                ?? "Data Source = (localdb)\\mssqllocaldb; Initial Catalog = TodoDb";
+                ?? "Data Source = localhost,1401; Initial Catalog = TodoDb; User Id=sa; Password=Password_01;";
 
             EnsureDatabase.For.SqlDatabase(connectionString);
 
